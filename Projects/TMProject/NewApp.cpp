@@ -414,15 +414,17 @@ HRESULT NewApp::InitDevice()
 			LOG_WRITELOG("Initialize Sound Failed\r\n");
 			SAFE_DELETE(m_pSoundManager);
 		}
+		else
+		{
+			int nVolume = 25 * m_nSound - 2500;
+			if (nVolume > 0)
+				nVolume = 0;
+			if (nVolume < -2500)
+				nVolume = -2500;
 
-		int nVolume = 25 * m_nSound - 2500;
-		if (nVolume > 0)
-			nVolume = 0;
-		if (nVolume < -2500)
-			nVolume = -2500;
-
-		m_pSoundManager->SetSoundVolume(nVolume);
-		m_pSoundManager->LoadSoundData();
+			m_pSoundManager->SetSoundVolume(nVolume);
+			m_pSoundManager->LoadSoundData();
+		}
 	}
 
 	if (m_nMusic > 0)
@@ -888,7 +890,7 @@ HRESULT NewApp::MsgProc(HWND hWnd, DWORD uMsg, DWORD wParam, int lParam)
 					}
 				}
 
-				if (!strcmp(static_cast<TMFieldScene*>(g_pCurrentScene)->m_pTextIMEDesc->GetText(), "Î"))
+				if (!strcmp(static_cast<TMFieldScene*>(g_pCurrentScene)->m_pTextIMEDesc->GetText(), "ï¿½"))
 					SendMessage(hWnd, 0x281, 0, -1073741809);
 				else
 					SendMessage(hWnd, 0x281u, 0, -1);
@@ -1235,7 +1237,7 @@ HRESULT NewApp::MsgProc(HWND hWnd, DWORD uMsg, DWORD wParam, int lParam)
 	{
 		if (g_pCurrentScene != nullptr)
 		{
-			if (strcmp(g_pCurrentScene->m_pTextIMEDesc->GetText(), "Î"))
+			if (strcmp(g_pCurrentScene->m_pTextIMEDesc->GetText(), "ï¿½"))
 				SendMessageA(hWnd, 0x281, 0, -1073741809);
 			else
 				SendMessageA(hWnd, 0x281, 0, -1);
