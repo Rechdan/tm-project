@@ -314,12 +314,7 @@ HRESULT NewApp::Initialize(HINSTANCE hInstance, int nFull)
 
 	hWndMain = m_hWnd;
 
-	if (!BASE_InitializeBaseDef())
-	{
-		MessageBoxA(m_hWnd, "Initialize Data Failed", "Error", 0);
-		LOG_WRITELOGSTRING("Initialize Data Failed\r\n");
-		return 0;
-	}
+	BASE_InitializeBaseDef();
 
 	ReadItemicon();
 	ReadItemName();

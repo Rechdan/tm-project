@@ -102,6 +102,7 @@ int BASE_InitializeAttribute()
     if (fp == nullptr)
     {
         MessageBox(0, "There is no file", "Attributemap.dat", MB_OK);
+        LOG_WRITELOGSTRING("BASE_InitializeAttribute: failed to open './Env/AttributeMap.dat' and '../../TMSRV/Run/AttributeMap.dat'\r\n");
         return 0;
     }
 
@@ -112,7 +113,13 @@ int BASE_InitializeAttribute()
 
     int sum = BASE_GetSum((char*)g_pAttribute, sizeof(g_pAttribute));
 
-    return sum == tsum;
+    if (sum != tsum)
+    {
+        LOG_WRITELOGSTRING("BASE_InitializeAttribute: checksum mismatch (expected=%d, got=%d)\r\n", tsum, sum);
+        return 0;
+    }
+
+    return 1;
 }
 
 void BASE_ApplyAttribute(char* pHeight, int size)
@@ -139,6 +146,7 @@ int BASE_ReadItemList()
     if (!fp)
     {
         MessageBoxA(0, "Can't read ItemList.bin", "ERROR", 0);
+        LOG_WRITELOGSTRING("BASE_ReadItemList: failed to open '.\\ItemList.bin'\r\n");
         return 0;
     }
 
@@ -156,7 +164,10 @@ int BASE_ReadItemList()
 
 #if !defined _DEBUG
     if (tsum != 0x1343B16)
+    {
+        LOG_WRITELOGSTRING("BASE_ReadItemList: checksum mismatch (expected=0x1343B16, got=0x%X)\r\n", tsum);
         return 0;
+    }
 #endif
 
     for (int i = 0; i < size; ++i)
@@ -185,7 +196,10 @@ int BASE_ReadItemList()
 
 #if !defined _DEBUG
         if (tsum != 0x1343B16)
+        {
+            LOG_WRITELOGSTRING("BASE_ReadItemList: checksum mismatch after ExtraItem (expected=0x1343B16, got=0x%X)\r\n", tsum);
             return 0;
+        }
 #endif
         for (int j = 0; j < size; ++j)
             temp[j] ^= 0x5A;
@@ -211,6 +225,7 @@ int BASE_ReadSkillBin()
     else
     {
         MessageBox(NULL, "Can't read SkillData.bin", "ERROR", NULL);
+        LOG_WRITELOGSTRING("BASE_ReadSkillBin: failed to open '%s'\r\n", SkillData_Path);
         return FALSE;
     }
 
@@ -349,16 +364,31 @@ void BASE_InitEffectString()
 
 int BASE_InitializeBaseDef()
 {
-    int ret = 0;
-	ret = BASE_InitializeServerList() & 1;
-    ret = BASE_ReadSkillBin() & ret;
-    ret = BASE_ReadItemList() & ret;
-    ret = BASE_ReadInitItem() & ret;
-    ret = BASE_InitializeAttribute() & ret;
+    int nSuccess = 0;
+
+    int nServerList = BASE_InitializeServerList();
+    LOG_WRITELOGSTRING("BASE_InitializeServerList: %s\r\n", nServerList ? "OK" : "FAILED");
+    nSuccess += nServerList;
+
+    int nSkillBin = BASE_ReadSkillBin();
+    LOG_WRITELOGSTRING("BASE_ReadSkillBin: %s\r\n", nSkillBin ? "OK" : "FAILED");
+    nSuccess += nSkillBin;
+
+    int nItemList = BASE_ReadItemList();
+    LOG_WRITELOGSTRING("BASE_ReadItemList: %s\r\n", nItemList ? "OK" : "FAILED");
+    nSuccess += nItemList;
+
+    int nAttribute = BASE_InitializeAttribute();
+    LOG_WRITELOGSTRING("BASE_InitializeAttribute: %s\r\n", nAttribute ? "OK" : "FAILED");
+    nSuccess += nAttribute;
+
+    BASE_ReadInitItem();
+
+    LOG_WRITELOGSTRING("BASE_InitializeBaseDef: %d/4 succeeded\r\n", nSuccess);
 
     BASE_InitialItemRePrice();
 
-	return ret;
+    return nServerList & nSkillBin & nItemList & nAttribute;
 }
 
 void BASE_ReadItemPrice()
@@ -1348,6 +1378,7 @@ int BASE_InitializeServerList()
 		return 1;
 	}
 
+	LOG_WRITELOGSTRING("BASE_InitializeServerList: failed to open './serverlist.bin'\r\n");
 	return 0;
 }
 
