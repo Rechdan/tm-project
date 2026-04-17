@@ -1,5 +1,9 @@
 name: MSBuild
-on: [pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, dev]
 
 jobs:
   build:
@@ -9,16 +13,17 @@ jobs:
         build_configuration: [Release, Debug]
 
     steps:
-    - name: checkout repo
-      uses: actions/checkout@v2.3.4
+    - name: Checkout repo
+      uses: actions/checkout@v4
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
 
     - name: Build
       run: msbuild /m /p:Platform=x86 /p:Configuration=${{matrix.build_configuration}} TM.sln
 
-    - uses: actions/upload-artifact@master
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
       with:
         name: TMProject_${{matrix.build_configuration}}
         path: ${{matrix.build_configuration}}/TMProject.exe

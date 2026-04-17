@@ -43,7 +43,7 @@ NewApp::NewApp()
 	BASE_InitializeHitRate();
 	BASE_ReadMessageBin();
 	LOG_INITIALIZELOG(LogFile_Path);
-	sprintf(m_strWindowTitle, GameWindow_Title);
+	sprintf(m_strWindowTitle, "%s", GameWindow_Title);
 	m_Winstate = 1;
 	china_bWrite = 0;
 	china_Playtime = -1;
@@ -227,6 +227,12 @@ HRESULT NewApp::Initialize(HINSTANCE hInstance, int nFull)
 			SetCursor(SCursor::m_hCursor1);
 	}
 
+	if (nResIndex < 1 || nResIndex > 11)
+	{
+		LOG_WRITELOG("Invalid nResIndex %d, falling back to default\n", nResIndex);
+		nResIndex = 2;
+	}
+
 	m_dwScreenWidth = stResList[nResIndex - 1].dwWidth;
 	m_dwScreenHeight = stResList[nResIndex - 1].dwHeight;
 	m_dwColorBit = stResList[nResIndex - 1].dwBit;
@@ -308,12 +314,7 @@ HRESULT NewApp::Initialize(HINSTANCE hInstance, int nFull)
 
 	hWndMain = m_hWnd;
 
-	if (!BASE_InitializeBaseDef())
-	{
-		MessageBoxA(m_hWnd, "Initialize Data Failed", "Error", 0);
-		LOG_WRITELOGSTRING("Initialize Data Failed\r\n");
-		return 0;
-	}
+	BASE_InitializeBaseDef();
 
 	ReadItemicon();
 	ReadItemName();
@@ -332,7 +333,7 @@ HRESULT NewApp::Initialize(HINSTANCE hInstance, int nFull)
 
 	memset(g_pItemHelp, 0, sizeof(g_pItemHelp));
 	char szItemHelpFile[128];
-	sprintf(szItemHelpFile, ItemHelp_Path);
+	sprintf(szItemHelpFile, "%s", ItemHelp_Path);
 
 	remove(ChangeUpdate_Path);
 
@@ -382,10 +383,8 @@ HRESULT NewApp::Initialize(HINSTANCE hInstance, int nFull)
 
 	if (m_pAviPlayer)
 		return 1;
-	else
-		return InitDevice();
 
-	return 0;
+	return InitDevice();
  }
 
 HRESULT NewApp::InitDevice()
@@ -414,15 +413,17 @@ HRESULT NewApp::InitDevice()
 			LOG_WRITELOG("Initialize Sound Failed\r\n");
 			SAFE_DELETE(m_pSoundManager);
 		}
+		else
+		{
+			int nVolume = 25 * m_nSound - 2500;
+			if (nVolume > 0)
+				nVolume = 0;
+			if (nVolume < -2500)
+				nVolume = -2500;
 
-		int nVolume = 25 * m_nSound - 2500;
-		if (nVolume > 0)
-			nVolume = 0;
-		if (nVolume < -2500)
-			nVolume = -2500;
-
-		m_pSoundManager->SetSoundVolume(nVolume);
-		m_pSoundManager->LoadSoundData();
+			m_pSoundManager->SetSoundVolume(nVolume);
+			m_pSoundManager->LoadSoundData();
+		}
 	}
 
 	if (m_nMusic > 0)
@@ -525,24 +526,15 @@ void NewApp::InitMusicList()
 		char szTemp2[256];
 
 		strcpy(szTemp2, &szTemp1[17]);
-		int nLen = strlen(szTemp2);
+		szTemp2[strcspn(szTemp2, "\r\n")] = 0;
 
-		if (szTemp1[nLen + 255] == '\n' || szTemp1[nLen + 255] == '\r')
-		{
-			szTemp2[nLen - 1] = 0;
-		}
-		if (szTemp1[nLen + 254] == '\n' || szTemp1[nLen + 254] == '\r')
-		{		
-			szTemp2[nLen - 2] = 0;
-		}
-
-		sprintf(DS_SOUND_MANAGER::m_szMusicPath[i], szTemp2);
+		sprintf(DS_SOUND_MANAGER::m_szMusicPath[i], "%s", szTemp2);
 	}
 
 	fclose(fp);
 
-	sprintf(DS_SOUND_MANAGER::m_szMusicPathOrigin[14], DSSound_1_Path);
-	sprintf(DS_SOUND_MANAGER::m_szMusicPathOrigin[13], DSSound_2_Path);
+	sprintf(DS_SOUND_MANAGER::m_szMusicPathOrigin[14], "%s", DSSound_1_Path);
+	sprintf(DS_SOUND_MANAGER::m_szMusicPathOrigin[13], "%s", DSSound_2_Path);
 }
 
 HRESULT NewApp::Finalize()
@@ -739,7 +731,7 @@ void NewApp::MixHelp()
 {
 	memset(g_pItemMixHelp, 0, sizeof(g_pItemMixHelp));
 	char szItemHelpFile[128];
-	sprintf(szItemHelpFile, MixHelp_Path);
+	sprintf(szItemHelpFile, "%s", MixHelp_Path);
 
 	FILE* fp = nullptr;
 	fopen_s(&fp, szItemHelpFile, "rt");
@@ -888,7 +880,7 @@ HRESULT NewApp::MsgProc(HWND hWnd, DWORD uMsg, DWORD wParam, int lParam)
 					}
 				}
 
-				if (!strcmp(static_cast<TMFieldScene*>(g_pCurrentScene)->m_pTextIMEDesc->GetText(), "Î"))
+				if (!strcmp(static_cast<TMFieldScene*>(g_pCurrentScene)->m_pTextIMEDesc->GetText(), "ï¿½"))
 					SendMessage(hWnd, 0x281, 0, -1073741809);
 				else
 					SendMessage(hWnd, 0x281u, 0, -1);
@@ -1235,7 +1227,7 @@ HRESULT NewApp::MsgProc(HWND hWnd, DWORD uMsg, DWORD wParam, int lParam)
 	{
 		if (g_pCurrentScene != nullptr)
 		{
-			if (strcmp(g_pCurrentScene->m_pTextIMEDesc->GetText(), "Î"))
+			if (strcmp(g_pCurrentScene->m_pTextIMEDesc->GetText(), "ï¿½"))
 				SendMessageA(hWnd, 0x281, 0, -1073741809);
 			else
 				SendMessageA(hWnd, 0x281, 0, -1);
@@ -1251,11 +1243,7 @@ HRESULT NewApp::MsgProc(HWND hWnd, DWORD uMsg, DWORD wParam, int lParam)
 		}
 		else if (!g_bEndGame && m_pRenderDevice != nullptr && m_bwFullScreen == 1)
 		{
-			ShowWindow(hWnd, 3);
-		}
-		else if (!g_bEndGame && m_pRenderDevice != nullptr && m_bwFullScreen == 1)
-		{
-			CloseWindow(hWnd);
+			ShowWindow(hWnd, SW_MINIMIZE);
 		}
 		else
 		{
@@ -1393,7 +1381,8 @@ void CreateConsole()
 {
 	AllocConsole();
 
-	// Output fix 
-	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
-	freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
+	FILE* fpOut = nullptr;
+	FILE* fpIn = nullptr;
+	freopen_s(&fpOut, "CONOUT$", "w", stdout);
+	freopen_s(&fpIn, "CONIN$", "r", stdin);
 }
